@@ -1,5 +1,5 @@
- .venv
- dist/
- __pycache__/
- *.egg-info
- 
+.venv
+dist/
+__pycache__/
+*.egg-info
+*.json 
