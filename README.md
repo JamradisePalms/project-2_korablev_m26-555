@@ -67,3 +67,7 @@ uvx twine check dist/*
 ```
 
 Собранные файлы `.whl` и `.tar.gz` находятся в папке `dist/`.
+
+## Демонстрация
+
+[Демонстрация работы в консоли](https://asciinema.org/a/Ffe6ks7QmNbhbGkn)
