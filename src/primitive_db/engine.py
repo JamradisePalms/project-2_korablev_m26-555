@@ -72,57 +72,47 @@ def run():
             print(f"Функции <{cmd}> нет. Попробуйте снова")
             continue
 
-        if cmd not in ("exit", "help"):
-            try:
+        try:
+            if cmd not in ("exit", "help"):
                 updated_metadata = load_metadata(METADATA_PATH)
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
-                continue
 
-        if cmd == "exit":
-            break
-        elif cmd == "help":
-            print_allowed_commands()
-        elif cmd == "create_table":
-            if len(args) < 3:
-                print("Недостаточно аргументов для создания таблицы")
-                continue
+            if cmd == "exit":
+                break
+            elif cmd == "help":
+                print_allowed_commands()
+            elif cmd == "create_table":
+                if len(args) < 3:
+                    print("Недостаточно аргументов для создания таблицы")
+                    continue
 
-            table_name = args[1]
-            columns = args[2:]
+                table_name = args[1]
+                columns = args[2:]
 
-            try:
                 result = create_table(updated_metadata, table_name, columns)
                 if result is None:
                     continue
                 updated_metadata = result
                 save_table_data(table_name, [])
                 save_metadata(METADATA_PATH, updated_metadata)
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
 
-        elif cmd == "list_tables":
-            for table_name in updated_metadata:
-                print(table_name)
+            elif cmd == "list_tables":
+                for table_name in updated_metadata:
+                    print(table_name)
 
-        elif cmd == "drop_table":
-            if len(args) < 2:
-                print("Недостаточно аргументов для удаления таблицы")
-                continue
+            elif cmd == "drop_table":
+                if len(args) < 2:
+                    print("Недостаточно аргументов для удаления таблицы")
+                    continue
 
-            table_name = args[1]
+                table_name = args[1]
 
-            try:
                 result = drop_table(updated_metadata, table_name)
                 if result is None:
                     continue
                 updated_metadata = result
                 save_metadata(METADATA_PATH, updated_metadata)
                 invalidate(table_name)
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
-        elif cmd == "select":
-            try:
+            elif cmd == "select":
                 table_name, where_clause = parse_select_command(user_input)
                 if table_name not in updated_metadata:
                     raise TableNotFoundError(f"Таблица {table_name} не существует")
@@ -146,20 +136,14 @@ def run():
                     for row in rows
                 ])
                 print(table)
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
-        elif cmd == "insert":
-            try:
+            elif cmd == "insert":
                 table_name, values = parse_insert_command(user_input)
                 if table_name not in updated_metadata:
                     raise TableNotFoundError(f"Таблица {table_name} не существует")
                 result = insert(updated_metadata, table_name, values)
                 if result is not None:
                     invalidate(table_name)
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
-        elif cmd == "update":
-            try:
+            elif cmd == "update":
                 table_name, set_clause, where_clause = parse_update_command(user_input)
                 if table_name not in updated_metadata:
                     raise TableNotFoundError(f"Таблица {table_name} не существует")
@@ -176,10 +160,7 @@ def run():
                 save_table_data(table_name, table_data)
                 invalidate(table_name)
                 print("Обновление выполнено успешно")
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
-        elif cmd == "delete":
-            try:
+            elif cmd == "delete":
                 table_name, where_clause = parse_delete_command(user_input)
                 if table_name not in updated_metadata:
                     raise TableNotFoundError(f"Таблица {table_name} не существует")
@@ -192,10 +173,7 @@ def run():
                 save_table_data(table_name, remaining_rows)
                 invalidate(table_name)
                 print(f"Удалено записей: {len(table_data) - len(remaining_rows)}")
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
-        elif cmd == "info":
-            try:
+            elif cmd == "info":
                 if len(args) != 2:
                     raise ValueError("Ожидается: info <таблица>")
                 table_name = args[1]
@@ -210,5 +188,5 @@ def run():
                 print(f"Таблица: {table_name}")
                 print(f"Столбцы: {description}")
                 print(f"Количество записей: {len(table_data)}")
-            except (KeyError, ValueError, FileNotFoundError) as error:
-                print_db_error(error)
+        except (KeyError, ValueError, FileNotFoundError) as error:
+            print_db_error(error)
