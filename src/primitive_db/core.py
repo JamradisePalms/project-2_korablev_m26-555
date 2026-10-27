@@ -1,17 +1,20 @@
+from .decorators import confirm_action, handle_db_errors, log_time
+from .errors import TableNotFoundError
 from .utils import load_table_data, save_table_data
 
 TYPES_WHITELIST = {"int": int, "bool": bool, "str": str}
 
-def create_table(metadata: dict, table_name: str, columns: list) -> dict:
+@handle_db_errors
+def create_table(metadata: dict, table_name: str, columns: list) -> dict | None:
     if table_name in metadata:
-        raise ValueError(f"Ошибка: Таблица {table_name} уже существует")
+        raise ValueError(f"Таблица {table_name} уже существует")
 
     columns_metadata = []
     column_names = set()
     for column in columns:
         column_name, column_type = column.split(":")
         if column_name in column_names:
-            raise ValueError(f"Ошибка: Столбец {column_name} указан несколько раз")
+            raise ValueError(f"Столбец {column_name} указан несколько раз")
         if column_type not in TYPES_WHITELIST:
             raise ValueError(f"Invalid column type: {column_type}")
         if column_name == "ID" and column_type != "int":
@@ -38,12 +41,13 @@ def create_table(metadata: dict, table_name: str, columns: list) -> dict:
     print(f"Таблица {table_name} успешно создана со столбцами: {updated_columns}")
     return metadata
 
-
-def drop_table(metadata: dict, table_name: str) -> dict:
+@confirm_action("удалить таблицу")
+@handle_db_errors
+def drop_table(metadata: dict, table_name: str) -> dict | None:
     copy_metadata = metadata.copy()
 
     if table_name not in copy_metadata:
-        raise ValueError(f"Ошибка: Таблица {table_name} не существует")
+        raise TableNotFoundError(f"Таблица {table_name} не существует")
 
     del copy_metadata[table_name]
 
@@ -51,15 +55,17 @@ def drop_table(metadata: dict, table_name: str) -> dict:
 
     return copy_metadata
 
-def insert(metadata: dict, table_name: str, values: list) -> dict:
+@log_time
+@handle_db_errors
+def insert(metadata: dict, table_name: str, values: list) -> list | None:
+
+    if table_name not in metadata:
+        raise TableNotFoundError(f"Таблица {table_name} не существует")
 
     table_data = load_table_data(table_name)
 
-    if table_name not in metadata:
-        raise ValueError(f"Ошибка: Таблица {table_name} не существует")
-
     if len(values) != len(metadata[table_name]["columns"]) - 1:
-        raise ValueError("Ошибка: Неверное количество значений для вставки")
+        raise ValueError("Неверное количество значений для вставки")
 
     new_row = {}
     for idx, value in enumerate(values, start=1):
@@ -67,7 +73,7 @@ def insert(metadata: dict, table_name: str, values: list) -> dict:
         column_type = metadata[table_name]["columns"][idx]["type"]
 
         if type(value) is not TYPES_WHITELIST[column_type]:
-            raise ValueError("Ошибка: Неверный тип данных для вставки")
+            raise ValueError("Неверный тип данных для вставки")
 
         new_row[column_name] = value
     new_row["ID"] = max(
@@ -83,7 +89,9 @@ def insert(metadata: dict, table_name: str, values: list) -> dict:
 
     return table_data
 
-def select(table_data: list[dict], where_clause: dict | None = None) -> list:
+@log_time
+@handle_db_errors
+def select(table_data: list[dict], where_clause: dict | None = None) -> list | None:
     if not where_clause:
         return table_data
 
@@ -94,16 +102,23 @@ def select(table_data: list[dict], where_clause: dict | None = None) -> list:
 
     return where_parts.copy()
 
-def update(table_data: list[dict], set_clause: dict, where_clause: dict) -> list:
+@handle_db_errors
+def update(table_data: list[dict], set_clause: dict, where_clause: dict) -> list | None:
     where_parts = select(table_data, where_clause)
+    if where_parts is None:
+        return None
 
     for row in where_parts:
         for key, value in set_clause.items():
             row[key] = value
     return table_data
 
-def delete(table_data: list[dict], where_clause: dict) -> list:
+@confirm_action("удалить запись")
+@handle_db_errors
+def delete(table_data: list[dict], where_clause: dict) -> list | None:
     where_parts = select(table_data, where_clause)
+    if where_parts is None:
+        return None
     copy_table = table_data.copy()
 
     for row in where_parts:
