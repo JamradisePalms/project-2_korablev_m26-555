@@ -74,7 +74,7 @@ def run():
     print("***Процесс работы с БД***")
     print_allowed_commands()
 
-    cacher = create_cacher()
+    cacher, invalidate = create_cacher()
 
     metadata_path = Path("metadata.json")
 
@@ -142,7 +142,7 @@ def run():
                     continue
                 updated_metadata = result
                 save_metadata(metadata_path, updated_metadata)
-                cacher = create_cacher()
+                invalidate(table_name)
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)
         elif cmd == "select":
@@ -156,8 +156,9 @@ def run():
                 if where_clause:
                     validate_clause(columns, where_clause)
 
+                key = (table_name, tuple(sorted((where_clause or {}).items())))
                 rows = cacher(
-                    user_input,
+                    key,
                     lambda: select(load_table_data(table_name), where_clause),
                 )
                 if rows is None:
@@ -178,7 +179,7 @@ def run():
                     raise TableNotFoundError(f"Таблица {table_name} не существует")
                 result = insert(updated_metadata, table_name, values)
                 if result is not None:
-                    cacher = create_cacher()
+                    invalidate(table_name)
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)
         elif cmd == "update":
@@ -197,7 +198,7 @@ def run():
                 if table_data is None:
                     continue
                 save_table_data(table_name, table_data)
-                cacher = create_cacher()
+                invalidate(table_name)
                 print("Обновление выполнено успешно")
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)
@@ -213,7 +214,7 @@ def run():
                 if remaining_rows is None:
                     continue
                 save_table_data(table_name, remaining_rows)
-                cacher = create_cacher()
+                invalidate(table_name)
                 print(f"Удалено записей: {len(table_data) - len(remaining_rows)}")
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)

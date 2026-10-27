@@ -68,4 +68,9 @@ def create_cacher():
             cache[key] = result
         return cache[key]
 
-    return cache_result
+    def invalidate(table_name):
+        keys = [key for key in cache if key[0] == table_name]
+        for key in keys:
+            del cache[key]
+
+    return cache_result, invalidate
