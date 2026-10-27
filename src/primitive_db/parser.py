@@ -2,6 +2,7 @@ import shlex
 
 
 def parse_value(value: str) -> str | int | bool:
+    """Преобразует текст значения в строку, целое число или bool."""
     value = value.strip()
 
     if not value:
@@ -19,6 +20,7 @@ def parse_value(value: str) -> str | int | bool:
         raise ValueError("Ожидается целое число, true/false или строка в кавычках")
 
 def parse_where_state(state: str) -> dict[str, str | int | bool]:
+    """Разбирает условие «столбец = значение» в словарь."""
     key, separator, value = state.partition("=")
     key = key.strip()
 
@@ -29,6 +31,7 @@ def parse_where_state(state: str) -> dict[str, str | int | bool]:
 
 
 def parse_select_command(command: str) -> tuple[str, dict | None]:
+    """Извлекает имя таблицы и необязательное условие из select."""
     parts = command.split(maxsplit=3)
     if len(parts) < 3 or parts[:2] != ["select", "from"]:
         raise ValueError("Ожидается: select from <таблица> [where <условие>]")
@@ -45,6 +48,7 @@ def parse_select_command(command: str) -> tuple[str, dict | None]:
 
 
 def parse_insert_command(command: str) -> tuple[str, list]:
+    """Извлекает имя таблицы и список значений из insert."""
     parts = command.split(maxsplit=4)
     if (
         len(parts) != 5
@@ -70,6 +74,7 @@ def parse_insert_command(command: str) -> tuple[str, list]:
     return parts[2], [parse_value(token) for token in tokens[::2]]
 
 def parse_update_command(command: str) -> tuple[str, dict, dict]:
+    """Извлекает таблицу, новое значение и условие из update."""
     lexer = shlex.shlex(command, posix=False, punctuation_chars="=,")
     lexer.whitespace_split = True
     lexer.commenters = ""
@@ -91,6 +96,7 @@ def parse_update_command(command: str) -> tuple[str, dict, dict]:
 
 
 def parse_delete_command(command: str) -> tuple[str, dict]:
+    """Извлекает имя таблицы и условие из delete."""
     parts = command.split(maxsplit=3)
     if len(parts) != 4 or parts[:2] != ["delete", "from"]:
         raise ValueError("Ожидается: delete from <таблица> where <условие>")

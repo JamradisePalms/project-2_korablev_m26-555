@@ -6,6 +6,7 @@ from .errors import ColumnNotFoundError, TableNotFoundError
 
 
 def print_db_error(error):
+    """Выводит понятное сообщение в зависимости от типа ошибки."""
     if isinstance(error, JSONDecodeError):
         print(f"Ошибка: Некорректный JSON-файл: {error}")
     elif isinstance(error, FileNotFoundError):
@@ -19,6 +20,7 @@ def print_db_error(error):
 
 
 def handle_db_errors(func):
+    """Перехватывает ошибки БД, печатает сообщение и возвращает None."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -32,6 +34,7 @@ def handle_db_errors(func):
 
 def confirm_action(action_name):
 
+    """Создаёт декоратор, выполняющий действие только после ответа y."""
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -46,6 +49,7 @@ def confirm_action(action_name):
 
 def log_time(func):
 
+    """Выводит время выполнения функции и возвращает её результат."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.monotonic()
@@ -58,9 +62,11 @@ def log_time(func):
     return wrapper
 
 def create_cacher():
+    """Возвращает функции чтения кэша и сброса результатов одной таблицы."""
     cache = {}
 
     def cache_result(key, value_func):
+        """Вычисляет и запоминает результат по ключу; None не сохраняет."""
         if key not in cache:
             result = value_func()
             if result is None:
@@ -69,6 +75,7 @@ def create_cacher():
         return cache[key]
 
     def invalidate(table_name):
+        """Удаляет из кэша все запросы указанной таблицы."""
         keys = [key for key in cache if key[0] == table_name]
         for key in keys:
             del cache[key]

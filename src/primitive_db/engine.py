@@ -1,9 +1,9 @@
 import shlex
-from pathlib import Path
 
 import prompt
 from prettytable import PrettyTable
 
+from .constants import CMD_WHITELIST, METADATA_PATH, TYPES_WHITELIST
 from .core import create_table, delete, drop_table, insert, select, update
 from .decorators import create_cacher, print_db_error
 from .errors import ColumnNotFoundError, TableNotFoundError
@@ -15,33 +15,9 @@ from .parser import (
 )
 from .utils import load_metadata, load_table_data, save_metadata, save_table_data
 
-CMD_WHITELIST = {
-    "exit" : "выйти из программы",
-    "help": "справочная информация",
-    "create_table": "<имя_таблицы> <столбец1:тип> <столбец2:тип> .. - создать таблицу",
-    "list_tables": "показать список всех таблиц",
-    "drop_table": "<имя_таблицы> - удалить таблицу",
-    "select": (
-        'from <имя_таблицы> - прочитать все записи '
-        '[where <столбец> = <значение>] - прочитать записи по условию.'
-    ),
-    "insert": (
-        'into <имя_таблицы> values (<значение1>, <значение2>, ...) - '
-        'создать запись'
-    ),
-    "update": (
-        '<имя_таблицы> set <столбец> = <значение> '
-        'where <столбец_условия> = <значение_условия> - обновить запись'
-    ),
-    "delete": (
-        'from <имя_таблицы> where <столбец_условия> = <значение_условия> '
-        '- удалить запись'
-    ),
-    "info": "<имя_таблицы> - показать информацию о таблице"
-}
-
 
 def print_allowed_commands() -> str:
+    """Печатает список команд и краткую справку."""
     for cmd, desc in CMD_WHITELIST.items():
         print(f"<command> {cmd} - {desc}")
 
@@ -61,22 +37,22 @@ def welcome():
             print(f"Функции <{cmd}> нет. Попробуйте снова")
 
 def validate_clause(columns: list[dict], clause: dict) -> None:
-    types = {"int": int, "str": str, "bool": bool}
+    """Проверяет имена столбцов и типы значений условия."""
     schema = {column["name"]: column["type"] for column in columns}
     for name, value in clause.items():
         if name not in schema:
             raise ColumnNotFoundError(f"Неизвестный столбец: {name}")
-        if type(value) is not types[schema[name]]:
+        if type(value) is not TYPES_WHITELIST[schema[name]]:
             raise ValueError(f"Неверный тип значения для столбца {name}")
 
 
 def run():
+    """Принимает команды, выполняет операции и выводит результаты."""
     print("***Процесс работы с БД***")
     print_allowed_commands()
 
     cacher, invalidate = create_cacher()
 
-    metadata_path = Path("metadata.json")
 
     while True:
         user_input = prompt.string("Введите команду: ")
@@ -98,7 +74,7 @@ def run():
 
         if cmd not in ("exit", "help"):
             try:
-                updated_metadata = load_metadata(metadata_path)
+                updated_metadata = load_metadata(METADATA_PATH)
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)
                 continue
@@ -121,7 +97,7 @@ def run():
                     continue
                 updated_metadata = result
                 save_table_data(table_name, [])
-                save_metadata(metadata_path, updated_metadata)
+                save_metadata(METADATA_PATH, updated_metadata)
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)
 
@@ -141,7 +117,7 @@ def run():
                 if result is None:
                     continue
                 updated_metadata = result
-                save_metadata(metadata_path, updated_metadata)
+                save_metadata(METADATA_PATH, updated_metadata)
                 invalidate(table_name)
             except (KeyError, ValueError, FileNotFoundError) as error:
                 print_db_error(error)

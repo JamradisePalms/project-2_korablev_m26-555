@@ -1,11 +1,13 @@
+from .constants import TYPES_WHITELIST
 from .decorators import confirm_action, handle_db_errors, log_time
 from .errors import TableNotFoundError
-from .utils import load_table_data, save_table_data
+from .utils import load_table_data, save_table_data, validate_table_name
 
-TYPES_WHITELIST = {"int": int, "bool": bool, "str": str}
 
 @handle_db_errors
 def create_table(metadata: dict, table_name: str, columns: list) -> dict | None:
+    """Проверяет столбцы и добавляет схему новой таблицы в метаданные."""
+    validate_table_name(table_name)
     if table_name in metadata:
         raise ValueError(f"Таблица {table_name} уже существует")
 
@@ -44,6 +46,7 @@ def create_table(metadata: dict, table_name: str, columns: list) -> dict | None:
 @confirm_action("удалить таблицу")
 @handle_db_errors
 def drop_table(metadata: dict, table_name: str) -> dict | None:
+    """Удаляет схему таблицы из метаданных после подтверждения."""
     copy_metadata = metadata.copy()
 
     if table_name not in copy_metadata:
@@ -59,6 +62,7 @@ def drop_table(metadata: dict, table_name: str) -> dict | None:
 @handle_db_errors
 def insert(metadata: dict, table_name: str, values: list) -> list | None:
 
+    """Проверяет значения и сохраняет новую запись с автоматическим ID."""
     if table_name not in metadata:
         raise TableNotFoundError(f"Таблица {table_name} не существует")
 
@@ -92,6 +96,7 @@ def insert(metadata: dict, table_name: str, values: list) -> list | None:
 @log_time
 @handle_db_errors
 def select(table_data: list[dict], where_clause: dict | None = None) -> list | None:
+    """Возвращает все записи или записи, подходящие под условие."""
     if not where_clause:
         return table_data
 
@@ -104,7 +109,8 @@ def select(table_data: list[dict], where_clause: dict | None = None) -> list | N
 
 @handle_db_errors
 def update(table_data: list[dict], set_clause: dict, where_clause: dict) -> list | None:
-    where_parts = select(table_data, where_clause)
+    """Меняет указанные поля в записях, подходящих под условие."""
+    where_parts = select.__wrapped__(table_data, where_clause)
     if where_parts is None:
         return None
 
@@ -116,7 +122,8 @@ def update(table_data: list[dict], set_clause: dict, where_clause: dict) -> list
 @confirm_action("удалить запись")
 @handle_db_errors
 def delete(table_data: list[dict], where_clause: dict) -> list | None:
-    where_parts = select(table_data, where_clause)
+    """После подтверждения возвращает записи без подходящих под условие."""
+    where_parts = select.__wrapped__(table_data, where_clause)
     if where_parts is None:
         return None
     copy_table = table_data.copy()

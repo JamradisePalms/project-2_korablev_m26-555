@@ -3,8 +3,8 @@ from .engine import run
 
 
 def main() -> None:
+    """Запускает консольное приложение базы данных."""
     print("DB project is running!")
-    # welcome()
     run()
 
 if __name__ == "__main__":
