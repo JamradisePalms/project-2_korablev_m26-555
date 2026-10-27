@@ -107,4 +107,4 @@ uvx twine check dist/*
 
 ## Демонстрация
 
-[![Демонстрация](https://asciinema.org/a/sxZ8BCcdocUbziG8.svg)](https://asciinema.org/a/sxZ8BCcdocUbziG8)
+[Открыть демонстрацию в asciinema](https://asciinema.org/a/sxZ8BCcdocUbziG8)
