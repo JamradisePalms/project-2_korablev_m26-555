@@ -1,5 +1,8 @@
 # Примитивная база данных
 
+Консольная база данных на Python: управление таблицами, CRUD-операции,
+хранение данных в JSON, обработка ошибок и кэширование запросов.
+
 ## Установка и запуск
 
 Требуются Python 3.12 или новее и менеджер проектов [uv](https://docs.astral.sh/uv/).
@@ -104,4 +107,4 @@ uvx twine check dist/*
 
 ## Демонстрация
 
-[Демонстрация работы в консоли](https://asciinema.org/a/sxZ8BCcdocUbziG8)
+[![Демонстрация](https://asciinema.org/a/sxZ8BCcdocUbziG8.svg)](https://asciinema.org/a/sxZ8BCcdocUbziG8)
